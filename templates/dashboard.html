@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Conveyor Monitor Dashboard</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0c10;
+            --card-bg: rgba(31, 40, 51, 0.45);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-primary: #ffffff;
+            --text-secondary: #c5c6c7;
+            
+            /* Color Indicators */
+            --red: #ff3b30;
+            --blue: #007aff;
+            --green: #34c759;
+            --yellow: #ffcc00;
+            --orange: #ff9500;
+            --purple: #af52de;
+            --neon-green: #66fcf1;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(102, 252, 241, 0.08) 0, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(175, 82, 222, 0.08) 0, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Header Styling */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 4px;
+        }
+
+        .title-area h1 {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #ffffff 0%, var(--neon-green) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .title-area p {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #ff3b30;
+            box-shadow: 0 0 8px #ff3b30;
+            transition: all 0.3s ease;
+        }
+
+        .status-badge.connected .status-dot {
+            background-color: #34c759;
+            box-shadow: 0 0 8px #34c759;
+        }
+
+        /* Video Feed Container */
+        .video-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            overflow: hidden;
+            width: 100%;
+            position: relative;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .video-container {
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .video-feed {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .video-overlay {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--neon-green);
+            border: 1px solid rgba(102, 252, 241, 0.2);
+        }
+
+        /* Counters Section */
+        .counters-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            padding-left: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        .counters-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        /* Glassmorphic Counter Card */
+        .counter-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 95px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .card-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .card-value {
+            font-size: 28px;
+            font-weight: 800;
+            align-self: flex-end;
+            margin-top: 8px;
+            transition: color 0.3s ease;
+        }
+
+        /* Card specific styles & glowing effects */
+        .card-red .card-dot { background-color: var(--red); box-shadow: 0 0 8px var(--red); }
+        .card-blue .card-dot { background-color: var(--blue); box-shadow: 0 0 8px var(--blue); }
+        .card-green .card-dot { background-color: var(--green); box-shadow: 0 0 8px var(--green); }
+        .card-yellow .card-dot { background-color: var(--yellow); box-shadow: 0 0 8px var(--yellow); }
+        .card-orange .card-dot { background-color: var(--orange); box-shadow: 0 0 8px var(--orange); }
+        .card-purple .card-dot { background-color: var(--purple); box-shadow: 0 0 8px var(--purple); }
+
+        /* Increment Animation */
+        @keyframes pulse-glow {
+            0% {
+                transform: scale(1);
+                border-color: var(--border-color);
+                box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.15);
+            }
+            30% {
+                transform: scale(1.05);
+                border-color: rgba(255, 255, 255, 0.4);
+                box-shadow: 0 0 20px 2px rgba(255, 255, 255, 0.2);
+            }
+            100% {
+                transform: scale(1);
+                border-color: var(--border-color);
+                box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.15);
+            }
+        }
+
+        .pulse {
+            animation: pulse-glow 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        /* Button controls */
+        .btn-reset {
+            width: 100%;
+            background: linear-gradient(135deg, rgba(255, 59, 48, 0.15) 0%, rgba(255, 149, 0, 0.15) 100%);
+            border: 1px solid rgba(255, 95, 0, 0.3);
+            border-radius: 16px;
+            color: #ff9500;
+            font-family: 'Outfit', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            padding: 16px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-reset:active {
+            transform: scale(0.98);
+            background: linear-gradient(135deg, rgba(255, 59, 48, 0.3) 0%, rgba(255, 149, 0, 0.3) 100%);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Footer */
+        footer {
+            margin-top: auto;
+            padding: 24px 0 8px 0;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.3);
+            text-align: center;
+        }
+
+        /* Loading state for video */
+        .video-loading {
+            position: absolute;
+            color: var(--text-secondary);
+            font-size: 14px;
+            z-index: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="title-area">
+                <h1>Conveyor Live</h1>
+                <p>Real-Time Color Count System</p>
+            </div>
+            <div class="status-badge" id="status-badge">
+                <div class="status-dot"></div>
+                <span id="status-text">Disconnected</span>
+            </div>
+        </header>
+
+        <!-- Live Video Stream -->
+        <div class="video-card">
+            <div class="video-overlay">LIVE CONVEYOR FEED</div>
+            <div class="video-container">
+                <span class="video-loading">Connecting to camera feed...</span>
+                <img src="/video_feed" class="video-feed" alt="Video stream loading..." onerror="this.style.display='none';">
+            </div>
+        </div>
+
+        <!-- Live Counters -->
+        <div class="counters-section">
+            <h2 class="section-title">DETECTION COUNTS</h2>
+            <div class="counters-grid">
+                <!-- Red -->
+                <div class="counter-card card-red" id="card-red">
+                    <div class="card-header">
+                        <div class="card-dot"></div>
+                        <span class="card-label">Red Cubes</span>
+                    </div>
+                    <div class="card-value" id="count-red">0</div>
+                </div>
+                <!-- Blue -->
+                <div class="counter-card card-blue" id="card-blue">
+                    <div class="card-header">
+                        <div class="card-dot"></div>
+                        <span class="card-label">Blue Cubes</span>
+                    </div>
+                    <div class="card-value" id="count-blue">0</div>
+                </div>
+                <!-- Green -->
+                <div class="counter-card card-green" id="card-green">
+                    <div class="card-header">
+                        <div class="card-dot"></div>
+                        <span class="card-label">Green Cubes</span>
+                    </div>
+                    <div class="card-value" id="count-green">0</div>
+                </div>
+                <!-- Yellow -->
+                <div class="counter-card card-yellow" id="card-yellow">
+                    <div class="card-header">
+                        <div class="card-dot"></div>
+                        <span class="card-label">Yellow Cubes</span>
+                    </div>
+                    <div class="card-value" id="count-yellow">0</div>
+                </div>
+                <!-- Orange -->
+                <div class="counter-card card-orange" id="card-orange">
+                    <div class="card-header">
+                        <div class="card-dot"></div>
+                        <span class="card-label">Orange Cubes</span>
+                    </div>
+                    <div class="card-value" id="count-orange">0</div>
+                </div>
+                <!-- Purple -->
+                <div class="counter-card card-purple" id="card-purple">
+                    <div class="card-header">
+                        <div class="card-dot"></div>
+                        <span class="card-label">Purple Cubes</span>
+                    </div>
+                    <div class="card-value" id="count-purple">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <button class="btn-reset" onclick="resetCounts()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+            </svg>
+            Reset All Counters
+        </button>
+
+        <footer>
+            Vision Conveyor System &copy; 2026. All Processing Executed on Laptop.
+        </footer>
+    </div>
+
+    <script>
+        // Track current counts to trigger animations on changes
+        const counts = {
+            "Red Cube": 0,
+            "Blue Cube": 0,
+            "Green Cube": 0,
+            "Yellow Cube": 0,
+            "Orange Cube": 0,
+            "Purple Cube": 0
+        };
+
+        const elements = {
+            "Red Cube": { count: document.getElementById('count-red'), card: document.getElementById('card-red') },
+            "Blue Cube": { count: document.getElementById('count-blue'), card: document.getElementById('card-blue') },
+            "Green Cube": { count: document.getElementById('count-green'), card: document.getElementById('card-green') },
+            "Yellow Cube": { count: document.getElementById('count-yellow'), card: document.getElementById('card-yellow') },
+            "Orange Cube": { count: document.getElementById('count-orange'), card: document.getElementById('card-orange') },
+            "Purple Cube": { count: document.getElementById('count-purple'), card: document.getElementById('card-purple') }
+        };
+
+        const statusBadge = document.getElementById('status-badge');
+        const statusText = document.getElementById('status-text');
+
+        // Function to update single count
+        function updateCount(key, value) {
+            if (counts[key] !== undefined && counts[key] !== value) {
+                const isFirstLoad = counts[key] === 0 && value === 0;
+                counts[key] = value;
+                
+                const el = elements[key];
+                if (el) {
+                    el.count.textContent = value;
+                    
+                    // Trigger pulse animation (skip if initial state is 0 to avoid flashing on reload)
+                    if (!isFirstLoad) {
+                        el.card.classList.remove('pulse');
+                        // Force reflow
+                        void el.card.offsetWidth;
+                        el.card.classList.add('pulse');
+                    }
+                }
+            }
+        }
+
+        // Establish SSE Connection
+        let eventSource = null;
+
+        function connectSSE() {
+            eventSource = new EventSource('/counts_stream');
+
+            eventSource.onopen = function() {
+                statusBadge.classList.add('connected');
+                statusText.textContent = 'Connected';
+            };
+
+            eventSource.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    
+                    // Update all counts based on incoming message
+                    updateCount("Red Cube", data["Red Cube"] || 0);
+                    updateCount("Blue Cube", data["Blue Cube"] || 0);
+                    updateCount("Green Cube", data["Green Cube"] || 0);
+                    updateCount("Yellow Cube", data["Yellow Cube"] || 0);
+                    updateCount("Orange Cube", data["Orange Cube"] || 0);
+                    updateCount("Purple Cube", data["Purple Cube"] || 0);
+                } catch (e) {
+                    console.error("Error parsing counts stream data", e);
+                }
+            };
+
+            eventSource.onerror = function() {
+                statusBadge.classList.remove('connected');
+                statusText.textContent = 'Reconnecting...';
+                eventSource.close();
+                // Reconnect after 3 seconds
+                setTimeout(connectSSE, 3000);
+            };
+        }
+
+        // Trigger asynchronous API request to reset counters on the laptop
+        function resetCounts() {
+            fetch('/reset_counts', {
+                method: 'POST'
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Instantly set elements to 0 for responsive feel
+                    for (let key in counts) {
+                        updateCount(key, 0);
+                    }
+                    console.log("Counters reset requested successfully.");
+                } else {
+                    console.error("Failed to reset counts on server.");
+                }
+            })
+            .catch(error => {
+                console.error("Error connecting to server for reset:", error);
+            });
+        }
+
+        // Initial connect
+        connectSSE();
+    </script>
+</body>
+</html>
